@@ -561,11 +561,16 @@ async function pushToSupabase() {
       headers: { ...SB_HDR, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body:    JSON.stringify({ user_id: userId, state, planner, grades, base_indice: baseIndice }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      const errText = await res.text();
+      setSyncStatus('error');
+      document.getElementById('sync-status').innerHTML += ` <span style="font-size:.6rem;color:#ef4444">[${res.status}: ${errText}]</span>`;
+      return;
+    }
     setSyncStatus('synced');
   } catch (e) {
     console.error('Supabase push:', e);
-    setSyncStatus('error');
+    document.getElementById('sync-status').innerHTML = `<span style="color:#ef4444">🔴 ${e.message}</span>`;
   }
 }
 
