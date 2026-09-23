@@ -1209,6 +1209,21 @@ function renderAnalisis() {
 
   container.innerHTML = `
     <div class="analisis-grid">
+      <div class="analisis-card" style="grid-column:1/-1">
+        <div class="analisis-card-header">🎯 Simulador de índice</div>
+        <div class="analisis-card-body" id="sim-body">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Índice objetivo</label>
+              <input id="sim-target" type="number" min="0" max="100" step="0.01" placeholder="95.00"
+                class="modal-input" style="width:140px;font-size:1.1rem"
+                oninput="calcSimulador()">
+            </div>
+            <div id="sim-result" style="flex:1;min-width:200px"></div>
+          </div>
+          <div id="sim-table"></div>
+        </div>
+      </div>
       <div class="analisis-card">
         <div class="analisis-card-header">🔓 Materias desbloqueadas ahora (${desbloqueadas.length})</div>
         <div class="analisis-card-body">${unlockHtml}</div>
@@ -1226,6 +1241,92 @@ function renderAnalisis() {
       <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px">📅 Línea de tiempo</div>
       ${buildGantt()}
     </div>`;
+}
+
+function calcSimulador() {
+  const target = parseFloat(document.getElementById('sim-target').value);
+  const resEl  = document.getElementById('sim-result');
+  const tblEl  = document.getElementById('sim-table');
+  if (isNaN(target) || target < 0 || target > 100) {
+    resEl.innerHTML = ''; tblEl.innerHTML = ''; return;
+  }
+
+  // Puntos de calidad actuales
+  let sumProd = 0, sumCr = 0;
+  if (baseIndice) { sumProd += baseIndice.indice * baseIndice.creditos; sumCr += baseIndice.creditos; }
+  ALL_MATERIAS.forEach(m => {
+    if (getStatus(m.code) === 'aprobada' && grades[m.code] != null) {
+      sumProd += grades[m.code] * m.cr; sumCr += m.cr;
+    }
+  });
+
+  // Materias pendientes (no aprobadas)
+  const pendientes = ALL_MATERIAS.filter(m => getStatus(m.code) !== 'aprobada');
+  const remCr = pendientes.reduce((s, m) => s + m.cr, 0);
+
+  if (remCr === 0) {
+    resEl.innerHTML = `<div style="color:var(--green);font-weight:700">✅ Ya completaste todas las materias.</div>`;
+    tblEl.innerHTML = ''; return;
+  }
+
+  // Nota requerida: target = (sumProd + N * remCr) / (sumCr + remCr)
+  const required = ((target * (sumCr + remCr)) - sumProd) / remCr;
+  const reqFixed = required.toFixed(2);
+
+  let resHtml, color;
+  if (required > 100) {
+    color = '#ef4444';
+    const maxAchievable = ((sumProd + 100 * remCr) / (sumCr + remCr)).toFixed(2);
+    resHtml = `
+      <div style="color:${color};font-weight:700;font-size:.9rem">⚠️ Índice ${target.toFixed(2)} no es alcanzable</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">El máximo posible sacando 100 en todo es <strong style="color:#f472b6">${maxAchievable}</strong></div>`;
+  } else if (required <= 0) {
+    color = '#22c55e';
+    resHtml = `
+      <div style="color:${color};font-weight:700;font-size:.9rem">🎉 Ya superaste el índice objetivo</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Tu índice actual ya es mayor a ${target.toFixed(2)}</div>`;
+  } else {
+    color = required >= 90 ? '#ef4444' : required >= 75 ? '#f59e0b' : '#22c55e';
+    resHtml = `
+      <div style="font-size:.85rem;color:var(--muted)">Necesitás sacar en promedio</div>
+      <div style="font-size:2rem;font-weight:800;color:${color}">${reqFixed}</div>
+      <div style="font-size:.75rem;color:var(--muted)">en las ${pendientes.length} materias restantes (${remCr} cr)</div>`;
+  }
+  resEl.innerHTML = resHtml;
+
+  // Tabla de materias pendientes con simulación individual
+  if (required > 0 && required <= 100) {
+    let rows = pendientes.map(m => {
+      const hypothetical = ((sumProd + required * m.cr) / (sumCr + m.cr)).toFixed(2);
+      return `
+        <tr>
+          <td style="font-family:monospace;font-size:.7rem;color:var(--muted);padding:6px 10px;white-space:nowrap">${m.code}</td>
+          <td style="font-size:.78rem;padding:6px 10px">${m.name}</td>
+          <td style="text-align:center;padding:6px 10px;font-size:.75rem">${m.cr} cr</td>
+          <td style="text-align:center;padding:6px 10px;font-weight:700;color:${color}">${reqFixed}</td>
+        </tr>`;
+    }).join('');
+
+    tblEl.innerHTML = `
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">
+        Materias pendientes
+      </div>
+      <div style="overflow:auto;border-radius:8px;border:1px solid var(--border)">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr style="background:var(--surface2);font-size:.7rem;color:var(--muted);text-transform:uppercase">
+              <th style="padding:8px 10px;text-align:left">Código</th>
+              <th style="padding:8px 10px;text-align:left">Materia</th>
+              <th style="padding:8px 10px;text-align:center">Créditos</th>
+              <th style="padding:8px 10px;text-align:center">Nota requerida</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  } else {
+    tblEl.innerHTML = '';
+  }
 }
 
 function buildGantt() {
