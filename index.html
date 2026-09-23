@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pensum IDIO — UNICARIBE</title>
+<style>
+:root[data-theme="dark"] {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #222536;
+  --border: #2a2d3e;
+  --header-bg: #0d1b3e;
+  --header-border: #1e3a6e;
+  --green: #22c55e;
+  --green-bg: #052e16;
+  --yellow: #f59e0b;
+  --yellow-bg: #1c1407;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --card-hover: #4a5568;
+  --badge-bg: #2a2d3e;
+  --badge-text: #94a3b8;
+  --tab-active: #1e3a6e;
+  --tab-text: #93c5fd;
+  --blocked-op: 0.4;
+  --purple: #a78bfa;
+  --red: #ef4444;
+  --month-bg: #1a1d27;
+  --month-border: #2a2d3e;
+  --month-header: #0d1b3e;
+}
+:root[data-theme="light"] {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --border: #e2e8f0;
+  --header-bg: #1e3a8a;
+  --header-border: #1d4ed8;
+  --green: #16a34a;
+  --green-bg: #dcfce7;
+  --yellow: #d97706;
+  --yellow-bg: #fef3c7;
+  --text: #0f172a;
+  --muted: #64748b;
+  --card-hover: #94a3b8;
+  --badge-bg: #e2e8f0;
+  --badge-text: #475569;
+  --tab-active: #dbeafe;
+  --tab-text: #1d4ed8;
+  --blocked-op: 0.35;
+  --purple: #7c3aed;
+  --red: #dc2626;
+  --month-bg: #ffffff;
+  --month-border: #e2e8f0;
+  --month-header: #eff6ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; transition: background .2s, color .2s; }
+
+/* ── HEADER ── */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+header {
+  background: var(--header-bg);
+  padding: 16px 24px;
+  border-bottom: 2px solid var(--header-border);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+header h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
+header p  { font-size: 0.75rem; color: #93c5fd; }
+
+.header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── THEME TOGGLE ── */
+.theme-btn {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  color: #fff; border-radius: 20px; padding: 6px 14px; cursor: pointer;
+  font-size: 0.78rem; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  transition: background .2s;
+}
+.theme-btn:hover { background: rgba(255,255,255,.2); }
+
+/* ── STATS ── */
+.stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 8px 14px; text-align: center; }
+.stat .num { font-size: 1.3rem; font-weight: 800; }
+.stat .lbl { font-size: 0.65rem; color: #93c5fd; text-transform: uppercase; letter-spacing: .05em; }
+.stat.green .num { color: var(--green); }
+.stat.yellow .num { color: var(--yellow); }
+.stat.gray .num  { color: #94a3b8; }
+.stat.purple .num { color: var(--purple); }
+
+/* ── PROGRESS ── */
+.progress-wrap { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.progress-bar { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), #16a34a); border-radius: 4px; transition: width .4s; }
+.progress-label { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 24px; }
+.tab-btn {
+  padding: 12px 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent;
+  transition: all .2s; margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--tab-text); border-bottom-color: var(--tab-text); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* ── LEGEND ── */
+.legend {
+  display: flex; gap: 14px; align-items: center; padding: 10px 24px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  font-size: 0.75rem; color: var(--muted); flex-wrap: wrap;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── PENSUM VIEW ── */
+#view-pensum main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.cuatrimestre { margin-bottom: 28px; }
+.cuat-title {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  border-radius: 6px; padding: 5px 12px; display: inline-block; margin-bottom: 10px;
+}
+[data-theme="dark"] .cuat-title {
+  color: #93c5fd; background: #0d1b3e; border: 1px solid #1e3a6e;
+}
+[data-theme="light"] .cuat-title {
+  color: #1e40af; background: #dbeafe; border: 1px solid #93c5fd;
+}
+.materias { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 9px; }
+
+.materia {
+  border: 1px solid var(--border); border-radius: 12px; padding: 13px;
+  background: var(--surface); cursor: pointer; transition: all .18s;
+  position: relative; user-select: none;
+}
+.materia:hover:not(.bloqueada) { border-color: var(--card-hover); transform: translateY(-1px); }
+.materia.aprobada { border-color: var(--green); background: var(--green-bg); }
+.materia.cursando  { border-color: var(--yellow); background: var(--yellow-bg); }
+.materia.bloqueada { opacity: var(--blocked-op); cursor: not-allowed; }
+
+.materia-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.materia-code { font-size: 0.68rem; font-weight: 700; color: var(--muted); font-family: monospace; }
+.materia-cr { font-size: 0.68rem; background: var(--badge-bg); border-radius: 4px; padding: 2px 7px; color: var(--badge-text); white-space: nowrap; }
+.materia-name { font-size: 0.83rem; font-weight: 600; line-height: 1.3; }
+.materia-req { font-size: 0.66rem; color: var(--muted); margin-top: 5px; }
+.materia-req span { color: #60a5fa; }
+
+.status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.aprobada .status-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.cursando .status-dot  { background: var(--yellow); box-shadow: 0 0 5px var(--yellow); }
+.pendiente .status-dot { background: var(--muted); }
+
+/* ── PLANNER VIEW ── */
+#view-planner { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.planner-intro { font-size: 0.82rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+.planner-intro strong { color: var(--text); }
+
+.planner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 700px) { .planner-grid { grid-template-columns: 1fr; } }
+
+.month-card {
+  background: var(--month-bg); border: 1px solid var(--month-border);
+  border-radius: 14px; overflow: hidden;
+}
+.month-card.past { opacity: 0.6; }
+.month-card.current { border-color: var(--green); }
+.month-header {
+  background: var(--month-header); padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--month-border);
+}
+.month-name { font-size: 0.85rem; font-weight: 700; }
+.month-badge {
+  font-size: 0.65rem; border-radius: 10px; padding: 2px 8px; font-weight: 600;
+}
+.cap-1 { background: #dbeafe; color: #1e40af; }
+.cap-2 { background: #d1fae5; color: #065f46; }
+[data-theme="dark"] .cap-1 { background: #1e3a6e; color: #93c5fd; }
+[data-theme="dark"] .cap-2 { background: #052e16; color: #86efac; }
+.current-tag { font-size: 0.65rem; color: var(--green); font-weight: 700; }
+
+.month-slots { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+.slot {
+  border: 1.5px dashed var(--border); border-radius: 8px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 0.78rem;
+}
+.slot.filled { border-style: solid; border-color: var(--border); background: var(--surface2); }
+.slot-num { font-size: 0.65rem; color: var(--muted); font-weight: 700; min-width: 16px; }
+
+.slot select {
+  flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-size: 0.78rem; padding: 4px 6px; cursor: pointer; outline: none;
+}
+.slot select:focus { border-color: #60a5fa; }
+.slot-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.slot-code { font-size: 0.65rem; color: var(--muted); font-family: monospace; }
+.slot-name { font-size: 0.78rem; font-weight: 600; }
+.slot-status { font-size: 0.62rem; padding: 1px 6px; border-radius: 8px; font-weight: 600; width: fit-content; }
+.slot-status.aprobada { background: var(--green-bg); color: var(--green); }
+.slot-status.cursando  { background: var(--yellow-bg); color: var(--yellow); }
+.slot-status.pendiente { background: var(--badge-bg); color: var(--muted); }
+
+.remove-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; padding: 2px; border-radius: 4px; transition: color .15s; }
+.remove-btn:hover { color: var(--red); }
+
+.planner-warning { font-size: 0.72rem; color: var(--yellow); background: var(--yellow-bg); border: 1px solid var(--yellow); border-radius: 8px; padding: 6px 12px; margin-top: 8px; display: none; }
+
+/* ── UNASSIGNED PANEL ── */
+.unassigned-panel { margin-top: 24px; }
+.unassigned-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+.unassigned-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.unassigned-chip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 12px; font-size: 0.75rem; cursor: default;
+  display: flex; align-items: center; gap: 6px;
+}
+.unassigned-chip .chip-code { font-family: monospace; color: var(--muted); font-size: 0.65rem; }
+
+/* ── ANÁLISIS ── */
+.analisis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; max-width: 1100px; margin: 0 auto; }
+@media (max-width: 700px) { .analisis-grid { grid-template-columns: 1fr; } }
+.analisis-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.analisis-card-header { background: var(--month-header); padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.analisis-card-body { padding: 16px 18px; }
+.unlock-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; background: var(--surface2); border: 1px solid #60a5fa44; margin-bottom: 6px; }
+.unlock-chip .chip-code { font-family: monospace; font-size: 0.65rem; color: #60a5fa; }
+.unlock-chip .chip-name { font-size: 0.78rem; font-weight: 600; }
+.unlock-chip .chip-cuat { font-size: 0.65rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+.period-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.8rem; }
+.period-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.period-bar { height: 100%; border-radius: 4px; transition: width .3s; }
+.period-label { min-width: 90px; color: var(--muted); font-size: 0.72rem; }
+.period-cr { min-width: 36px; text-align: right; font-weight: 700; font-size: 0.78rem; }
+.grad-block { text-align: center; padding: 20px 0; }
+.grad-date { font-size: 2rem; font-weight: 800; color: var(--purple); }
+.grad-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+.grad-months { font-size: 0.85rem; font-weight: 600; margin-top: 12px; }
+
+/* ── MAPA ── */
+#view-mapa { overflow: auto; padding: 24px; }
+.mapa-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.72rem; margin-bottom: 16px; }
+.mapa-legend-item { display: flex; align-items: center; gap: 5px; }
+.mapa-legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
+
+/* ── GANTT ── */
+.gantt-wrap { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.gantt-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.gantt-month { min-width: 110px; font-size: 0.72rem; color: var(--muted); font-weight: 600; text-align: right; }
+.gantt-bars { display: flex; gap: 6px; flex-wrap: wrap; }
+.gantt-chip { border-radius: 20px; padding: 4px 12px; font-size: 0.72rem; font-weight: 600; border: 1.5px solid; }
+.gantt-chip.aprobada { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.gantt-chip.cursando  { background: var(--yellow-bg); border-color: var(--yellow); color: var(--yellow); }
+.gantt-chip.pendiente { background: var(--surface2); border-color: var(--border); color: var(--text); }
+.gantt-divider { height: 1px; background: var(--border); margin: 4px 0 10px 122px; }
+
+.planner-view-toggle { display: flex; gap: 8px; padding: 12px 24px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+.view-toggle-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; transition: all .15s; }
+.view-toggle-btn.active { background: var(--tab-active); color: var(--tab-text); border-color: var(--tab-text); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.modal-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; }
+.modal-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 1.4rem; font-weight: 700; text-align: center;
+  outline: none; transition: border .15s;
+}
+.modal-input:focus { border-color: #60a5fa; }
+.modal-hint { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 6px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-btn {
+  flex: 1; padding: 10px; border-radius: 10px; border: none; font-size: 0.85rem;
+  font-weight: 700; cursor: pointer; transition: opacity .15s;
+}
+.modal-btn:hover { opacity: .85; }
+.modal-btn.confirm { background: var(--green); color: #fff; }
+.modal-btn.cancel  { background: var(--border); color: var(--text); }
+
+/* Nota en card */
+.materia-nota { font-size: 0.72rem; font-weight: 700; color: var(--green); margin-top: 4px; }
+
+@media (max-width: 600px) {
+  header { padding: 12px 16px; }
+  #view-pensum main, #view-planner { padding: 14px; }
+  .tabs { padding: 0 14px; }
+  .legend { padding: 8px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sticky-top"><header>
+  <div>
+    <h1>📊 Pensum — Ingeniería de Datos e Inteligencia Organizacional</h1>
+    <p>UNICARIBE · Clic en materia para cambiar estado</p>
+  </div>
+  <div class="header-right">
+    <div class="stats">
+      <div class="stat green"><div class="num" id="s-aprobadas">0</div><div class="lbl">Aprobadas</div></div>
+      <div class="stat yellow"><div class="num" id="s-cursando">0</div><div class="lbl">Cursando</div></div>
+      <div class="stat gray"><div class="num" id="s-pendientes">0</div><div class="lbl">Pendientes</div></div>
+      <div class="stat purple"><div class="num" id="s-creditos">0</div><div class="lbl">Créditos</div></div>
+      <div class="stat" style="border-color:rgba(255,255,255,.15);cursor:pointer" onclick="openBaseModal()" title="Clic para ingresar índice base">
+        <div class="num" id="s-indice" style="color:#f472b6;font-size:1.1rem">—</div>
+        <div class="lbl">Índice</div>
+      </div>
+    </div>
+    <div id="sync-status" style="font-size:.72rem;color:#64748b;white-space:nowrap"></div>
+    <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">🌙 Oscuro</button>
+    <button class="theme-btn" onclick="openSyncDevice()" title="Sincronizar dispositivo" style="opacity:.4;font-size:.7rem;padding:5px 10px">🔑</button>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="progress-label" id="prog-label">0 de 185 créditos completados</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('pensum', this)">📋 Pensum</button>
+  <button class="tab-btn" onclick="switchTab('planner', this)">📅 Planificador</button>
+  <button class="tab-btn" onclick="switchTab('analisis', this)">📊 Análisis</button>
+  <button class="tab-btn" onclick="switchTab('mapa', this)">🔗 Mapa</button>
+</div>
+</div><!-- /.sticky-top -->
+
+<div id="base-modal-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeBaseModal()">
+  <div class="modal-box">
+    <div class="modal-title">📊 Índice base actual</div>
+    <div class="modal-sub">Ingresá tu índice y créditos aprobados antes de usar esta app. El sistema los ponderará junto a las materias que marques aquí.</div>
+    <div style="display:flex;gap:12px;margin-bottom:6px">
+      <div style="flex:1">
+        <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Índice actual</label>
+        <input class="modal-input" id="base-indice-input" type="number" min="0" max="100" step="0.01" placeholder="87.43">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Créditos aprobados</label>
+        <input class="modal-input" id="base-creditos-input" type="number" min="0" max="185" step="1" placeholder="42">
+      </div>
+    </div>
+    <div class="modal-hint">El índice se recalcula como promedio ponderado entre tu base y las materias que registres aquí.</div>
+    <div style="margin-top:10px;font-size:.7rem;color:var(--muted);text-align:center" id="base-clear-hint"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="clearBaseIndice()">🗑 Limpiar base</button>
+      <button class="modal-btn confirm" onclick="confirmBaseModal()">✓ Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Calificación obtenida</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <input class="modal-input" id="modal-input" type="number" min="0" max="100" step="0.01"
+      placeholder="93.15" onkeydown="if(event.key==='Enter')confirmModal()">
+    <div class="modal-hint">Escala 0 – 100 · Dos decimales</div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="confirmModal()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="view-pensum">
+  <div class="legend">
+    <strong style="color:var(--text)">Estado:</strong>
+    <div class="legend-item"><div class="dot" style="background:var(--muted)"></div> Pendiente</div>
+    <div class="legend-item"><div class="dot" style="background:var(--yellow)"></div> Cursando</div>
+    <div class="legend-item"><div class="dot" style="background:var(--green)"></div> Aprobada</div>
+    <div style="margin-left:auto;font-size:0.7rem;opacity:.7">Materia opacada = pre-req no cumplido</div>
+  </div>
+  <main id="pensum-main"></main>
+</div>
+
+<div id="view-planner" style="display:none"></div>
+<div id="view-analisis" style="display:none"></div>
+<div id="view-mapa" style="display:none"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const PENSUM = [
+  { cuat: "1er Cuatrimestre", materias: [
+    { code: "FGC-101", name: "Orientación Académica Institucional", cr: 2, req: [] },
+    { code: "FGC-102", name: "Método del Trabajo Académico", cr: 2, req: [] },
+    { code: "FGC-103", name: "Metodología de la Investigación", cr: 3, req: [] },
+    { code: "ADE-101", name: "Administración I", cr: 3, req: [] },
+  ]},
+  { cuat: "2do Cuatrimestre", materias: [
+    { code: "FGC-104", name: "Lengua Española I", cr: 3, req: ["FGC-102"] },
+    { code: "FGC-105", name: "Matemática Básica I", cr: 3, req: ["FGC-102"] },
+    { code: "FGC-106", name: "Tecnología de la Información y Comunicación I", cr: 3, req: ["FGC-102"] },
+    { code: "ING-101", name: "Introducción a la Ingeniería", cr: 3, req: [] },
+  ]},
+  { cuat: "3er Cuatrimestre", materias: [
+    { code: "FGC-107", name: "Historia Social Dominicana", cr: 3, req: ["FGC-102"] },
+    { code: "FGC-108", name: "Inglés I", cr: 3, req: ["FGC-102"] },
+    { code: "DMF-209", name: "Física I", cr: 4, req: ["FGC-105"] },
+    { code: "QUI-400", name: "Química I", cr: 3, req: ["FGC-105"] },
+    { code: "MTI-200", name: "Matemática II", cr: 4, req: ["FGC-105"] },
+  ]},
+  { cuat: "4to Cuatrimestre", materias: [
+    { code: "FGC-109", name: "Filosofía", cr: 2, req: ["FGC-102"] },
+    { code: "FGC-110", name: "Desarrollo Sostenible y Gestión de Riesgos", cr: 2, req: ["FGC-102"] },
+    { code: "MTI-300", name: "Matemática III", cr: 4, req: ["MTI-200"] },
+    { code: "DMF-210", name: "Física II", cr: 4, req: ["DMF-209"] },
+  ]},
+  { cuat: "5to Cuatrimestre", materias: [
+    { code: "MAT-241", name: "Estadística I", cr: 3, req: ["FGC-105"] },
+    { code: "ING-102", name: "Ciencia e Ingeniería de Materiales", cr: 4, req: ["QUI-400"] },
+    { code: "ING-103", name: "Cálculo Integral", cr: 4, req: ["MTI-300"] },
+    { code: "INF-215", name: "Ingeniería Económica", cr: 3, req: ["MTI-200"] },
+  ]},
+  { cuat: "6to Cuatrimestre", materias: [
+    { code: "MAT-242", name: "Estadística II", cr: 3, req: ["MAT-241"] },
+    { code: "ING-105", name: "Taller de Mecánica de Hardware", cr: 3, req: ["FGC-106"] },
+    { code: "ING-104", name: "Cálculo Vectorial", cr: 4, req: ["ING-103"] },
+    { code: "INF-222", name: "Sistema Operativo I", cr: 3, req: ["FGC-106"] },
+    { code: "INF-221", name: "Introducción a la Programación", cr: 3, req: ["FGC-106"] },
+  ]},
+  { cuat: "7mo Cuatrimestre", materias: [
+    { code: "TIC-408", name: "Seguridad de la Información", cr: 3, req: ["FGC-106"] },
+    { code: "IND-101", name: "Ciencia de los Datos", cr: 3, req: [] },
+    { code: "INF-437", name: "Redes Informáticas", cr: 3, req: ["FGC-106"] },
+    { code: "ISW-301", name: "Taller de Programación I", cr: 5, req: ["INF-221"] },
+  ]},
+  { cuat: "8vo Cuatrimestre", materias: [
+    { code: "ISW-321", name: "Taller de Bases de Datos I", cr: 4, req: ["INF-221"] },
+    { code: "TIC-402", name: "Ética en Tecnología", cr: 2, req: ["FGC-110"] },
+    { code: "IND-404", name: "Electiva I", cr: 3, req: ["7MO"] },
+    { code: "IND-314", name: "Teoría de la Información", cr: 3, req: ["IND-101"] },
+  ]},
+  { cuat: "9no Cuatrimestre", materias: [
+    { code: "IND-324", name: "Señales y Sistemas", cr: 3, req: ["IND-314"] },
+    { code: "IND-325", name: "Búsqueda y Análisis de la Información", cr: 3, req: ["IND-314"] },
+    { code: "IND-332", name: "Herramientas de Análisis de Datos I", cr: 4, req: ["IND-101"] },
+    { code: "IND-334", name: "Estadísticas Aplicada a la Ciencia de Datos", cr: 3, req: ["MAT-242"] },
+    { code: "IND-335", name: "Ingeniería de Datos I", cr: 4, req: ["IND-314"] },
+  ]},
+  { cuat: "10mo Cuatrimestre", materias: [
+    { code: "IND-333", name: "Tratamiento de Audio, Video y Visión Artificial", cr: 4, req: ["IND-324"] },
+    { code: "IND-412", name: "Herramientas de Análisis de Datos II", cr: 4, req: ["IND-332"] },
+    { code: "IND-405", name: "Electiva II", cr: 3, req: ["9NO"] },
+    { code: "IND-401", name: "Proyecto de Datos e IO - I", cr: 5, req: ["IND-335"] },
+    { code: "IND-403", name: "Pasantía - Práctica", cr: 8, req: ["IND-335"] },
+  ]},
+  { cuat: "11mo Cuatrimestre", materias: [
+    { code: "IND-413", name: "Ingeniería de Datos II", cr: 4, req: ["IND-335"] },
+    { code: "IND-431", name: "Visualización de Datos", cr: 4, req: ["IND-325"] },
+    { code: "IND-402", name: "Proyecto de Datos e IO - II", cr: 5, req: ["IND-401"] },
+    { code: "IND-414", name: "Ingeniería de Big Data", cr: 4, req: ["ISW-321"] },
+    { code: "FGC-111", name: "Seminario de Grado", cr: 3, req: ["FGC-103"] },
+  ]},
+  { cuat: "12mo Cuatrimestre", materias: [
+    { code: "IND-421", name: "Aplicaciones e Infraestructura de Big Data", cr: 4, req: ["IND-414"] },
+    { code: "IND-423", name: "Minería de Datos", cr: 4, req: ["ISW-321"] },
+    { code: "IND-432", name: "Inteligencia de Negocios", cr: 3, req: ["IND-413"] },
+    { code: "IND-600", name: "Proyecto Integrador: Trabajo de Grado", cr: 6, req: ["TODAS"] },
+  ]},
+];
+
+const ALL_MATERIAS = PENSUM.flatMap(c => c.materias);
+
+// ── MONTHS WITH 2-SLOT CAPACITY ──
+const TWO_SLOT_MONTHS = [3, 7, 10, 11]; // April=3, August=7, November=10, December=11 (0-indexed)
+
+function monthCapacity(monthIdx) {
+  return TWO_SLOT_MONTHS.includes(monthIdx) ? 2 : 1;
+}
+
+// Noviembre y Diciembre comparten un máximo combinado de 3 materias.
+// Si uno tiene 2, el otro solo puede tener 1.
+function countAssignedInMonth(year, monthIdx) {
+  const k = monthKey(year, monthIdx);
+  return (planner[k] || []).filter(c => c != null).length;
+}
+
+function effectiveCapacity(year, monthIdx) {
+  const base = monthCapacity(monthIdx);
+  if (monthIdx === 10 || monthIdx === 11) {
+    const other = monthIdx === 10 ? 11 : 10;
+    const otherCount = countAssignedInMonth(year, other);
+    return Math.min(base, 3 - otherCount);
+  }
+  return base;
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+// ── SUPABASE CONFIG ───────────────────────────────────────────────────────
+const SB_URL = 'https://ompcvdqqwpwaookeamcc.supabase.co';
+const SB_KEY = 'sb_publishable_KNGnZWV9SR8lkIwHehH68A_f0zM5gjZ';
+const SB_API = `${SB_URL}/rest/v1/pensum_data`;
+const SB_HDR = {
+  'apikey':        SB_KEY,
+  'Authorization': `Bearer ${SB_KEY}`,
+  'Content-Type':  'application/json',
+};
+
+// Unique device ID — generated once, persists in localStorage
+let userId = localStorage.getItem('pensum-userid');
+if (!userId) {
+  userId = crypto.randomUUID();
+  localStorage.setItem('pensum-userid', userId);
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let state      = JSON.parse(localStorage.getItem('pensum-idio')    || '{}');
+let planner    = JSON.parse(localStorage.getItem('pensum-planner') || '{}');
+let grades     = JSON.parse(localStorage.getItem('pensum-grades')  || '{}');
+let baseIndice = JSON.parse(localStorage.getItem('pensum-base')    || 'null');
+let theme      = localStorage.getItem('pensum-theme') || 'dark';
+
+let _syncTimer = null;
+
+function setSyncStatus(s) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    syncing: '🔄 Sincronizando...',
+    synced:  '<span style="color:#22c55e">🟢 Sincronizado</span>',
+    error:   '<span style="color:#ef4444">🔴 Sin conexión — guardado local</span>',
+  };
+  el.innerHTML = map[s] || '';
+}
+
+function saveLocal() {
+  localStorage.setItem('pensum-idio',      JSON.stringify(state));
+  localStorage.setItem('pensum-planner',   JSON.stringify(planner));
+  localStorage.setItem('pensum-grades',    JSON.stringify(grades));
+  localStorage.setItem('pensum-base',      JSON.stringify(baseIndice));
+}
+
+function save() {
+  saveLocal();
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(pushToSupabase, 900);
+}
+
+async function pushToSupabase() {
+  setSyncStatus('syncing');
+  try {
+    const res = await fetch(SB_API, {
+      method:  'POST',
+      headers: { ...SB_HDR, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body:    JSON.stringify({ user_id: userId, state, planner, grades, base_indice: baseIndice }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    setSyncStatus('synced');
+  } catch (e) {
+    console.error('Supabase push:', e);
+    setSyncStatus('error');
+  }
+}
+
+async function loadFromSupabase() {
+  setSyncStatus('syncing');
+  try {
+    const res = await fetch(`${SB_API}?user_id=eq.${userId}&select=*`, { headers: SB_HDR });
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    if (rows.length > 0) {
+      const r = rows[0];
+      if (r.state      && Object.keys(r.state).length)   state      = r.state;
+      if (r.planner    && Object.keys(r.planner).length) planner    = r.planner;
+      if (r.grades     && Object.keys(r.grades).length)  grades     = r.grades;
+      if (r.base_indice)                                  baseIndice = r.base_indice;
+      saveLocal();
+    }
+    setSyncStatus('synced');
+  } catch (e) {
+    console.error('Supabase load:', e);
+    setSyncStatus('error');
+  }
+  renderPensum();
+  updateStats();
+}
+
+// ── THEME ──────────────────────────────────────────────────────────────────
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = t === 'dark' ? '☀️ Claro' : '🌙 Oscuro';
+  localStorage.setItem('pensum-theme', t);
+}
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
+}
+applyTheme(theme);
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['pensum','planner','analisis','mapa'].forEach(v =>
+    document.getElementById('view-'+v).style.display = name === v ? '' : 'none'
+  );
+  if (name === 'planner')  renderPlanner();
+  if (name === 'analisis') renderAnalisis();
+  if (name === 'mapa')     renderMapa();
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function getStatus(code) { return state[code] || 'pendiente'; }
+
+function prereqsMet(req) {
+  if (!req || req.length === 0) return true;
+  if (req.includes('TODAS')) return ALL_MATERIAS.filter(m => m.code !== 'IND-600').every(m => getStatus(m.code) === 'aprobada');
+  if (req.includes('7MO')) return PENSUM[6].materias.every(m => getStatus(m.code) === 'aprobada');
+  if (req.includes('9NO')) return PENSUM[8].materias.every(m => getStatus(m.code) === 'aprobada');
+  return req.every(r => getStatus(r) === 'aprobada');
+}
+
+let _pendingCode = null;
+
+function cycle(code) {
+  const order = ['pendiente', 'cursando', 'aprobada'];
+  const cur   = getStatus(code);
+  const next  = order[(order.indexOf(cur) + 1) % order.length];
+
+  if (next === 'aprobada') {
+    // Ask for grade before marking approved
+    const mat = ALL_MATERIAS.find(m => m.code === code);
+    _pendingCode = code;
+    document.getElementById('modal-title').textContent = mat.name;
+    document.getElementById('modal-sub').textContent   = `${code} · ${mat.cr} créditos`;
+    document.getElementById('modal-input').value       = grades[code] != null ? grades[code] : '';
+    document.getElementById('modal-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('modal-input').focus(), 50);
+    return;
+  }
+
+  // Going back from aprobada → remove grade
+  if (cur === 'aprobada') delete grades[code];
+
+  state[code] = next;
+  save();
+  renderPensum();
+  updateStats();
+}
+
+function confirmModal() {
+  const raw = parseFloat(document.getElementById('modal-input').value);
+  if (isNaN(raw) || raw < 0 || raw > 100) {
+    document.getElementById('modal-input').style.borderColor = 'var(--red)';
+    return;
+  }
+  grades[_pendingCode]  = Math.round(raw * 100) / 100;
+  state[_pendingCode]   = 'aprobada';
+  _pendingCode = null;
+  closeModal();
+  save();
+  renderPensum();
+  updateStats();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  document.getElementById('modal-input').style.borderColor = '';
+  _pendingCode = null;
+}
+
+function openBaseModal() {
+  document.getElementById('base-indice-input').value  = baseIndice ? baseIndice.indice  : '';
+  document.getElementById('base-creditos-input').value = baseIndice ? baseIndice.creditos : '';
+  document.getElementById('base-clear-hint').textContent = baseIndice
+    ? `Base actual: ${baseIndice.indice.toFixed(2)} con ${baseIndice.creditos} cr` : '';
+  document.getElementById('base-modal-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('base-indice-input').focus(), 50);
+}
+
+function closeBaseModal() {
+  document.getElementById('base-modal-overlay').style.display = 'none';
+}
+
+function confirmBaseModal() {
+  const ind = parseFloat(document.getElementById('base-indice-input').value);
+  const cr  = parseInt(document.getElementById('base-creditos-input').value);
+  if (isNaN(ind) || ind < 0 || ind > 100 || isNaN(cr) || cr < 0) {
+    document.getElementById('base-indice-input').style.borderColor  = 'var(--red)';
+    document.getElementById('base-creditos-input').style.borderColor = 'var(--red)';
+    return;
+  }
+  baseIndice = { indice: Math.round(ind * 100) / 100, creditos: cr };
+  closeBaseModal();
+  save();
+  updateStats();
+}
+
+function openSyncDevice() {
+  const uuid = prompt('Pegá tu UUID de sincronización:');
+  if (!uuid || uuid.length < 10) return;
+  localStorage.setItem('pensum-userid', uuid.trim());
+  location.reload();
+}
+
+function clearBaseIndice() {
+  baseIndice = null;
+  closeBaseModal();
+  save();
+  updateStats();
+}
+
+// ── MONTH UTILS ────────────────────────────────────────────────────────────
+const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function monthKey(year, month) { return `${year}-${String(month).padStart(2,'0')}`; }
+
+function generateMonths() {
+  const now = new Date();
+  const months = [];
+
+  // Start 2 months before today
+  let y = now.getFullYear(), m = now.getMonth() - 2;
+  if (m < 0) { m += 12; y--; }
+
+  const pending = ALL_MATERIAS.filter(mat => getStatus(mat.code) !== 'aprobada');
+  const allPlanned = pending.length > 0 && pending.every(mat => getAssignedMonth(mat.code));
+
+  let endYear, endMonth;
+
+  if (allPlanned) {
+    // Stop at the latest planned month — calendar is complete
+    let maxY = y, maxM = m;
+    Object.keys(planner).forEach(k => {
+      const p = k.split('-');
+      const ky = parseInt(p[0]), km = parseInt(p[1]);
+      if (ky > maxY || (ky === maxY && km > maxM)) { maxY = ky; maxM = km; }
+    });
+    endYear = maxY; endMonth = maxM;
+  } else {
+    // Default: show 26 months from start
+    let ey = y, em = m + 26;
+    while (em > 11) { em -= 12; ey++; }
+    endYear = ey; endMonth = em;
+  }
+
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    months.push({ year: y, month: m, key: monthKey(y, m) });
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  return months;
+}
+
+function isCurrentMonth(year, month) {
+  const now = new Date();
+  return year === now.getFullYear() && month === now.getMonth();
+}
+
+function isPastMonth(year, month) {
+  const now = new Date();
+  return (year < now.getFullYear()) || (year === now.getFullYear() && month < now.getMonth());
+}
+
+// Get codes assigned to a month key
+function assignedInMonth(key) { return planner[key] || []; }
+
+// Returns the earliest {year, month} (0-indexed) a course can be planned,
+// based on the rule: prereq must be planned ≥2 months before this course.
+function earliestAllowed(code) {
+  const mat = ALL_MATERIAS.find(m => m.code === code);
+  if (!mat || !mat.req || mat.req.length === 0) return null;
+
+  let latestY = null, latestM = null;
+
+  mat.req.forEach(reqCode => {
+    if (['TODAS','7MO','9NO'].includes(reqCode)) return;
+    const k = getAssignedMonth(reqCode);
+    if (!k) return;
+    const p = k.split('-');
+    const y = parseInt(p[0]), m = parseInt(p[1]); // 0-indexed
+    if (latestY === null || y > latestY || (y === latestY && m > latestM)) {
+      latestY = y; latestM = m;
+    }
+  });
+
+  if (latestY === null) return null;
+
+  // Earliest = prereq month + 2
+  let ey = latestY, em = latestM + 2;
+  if (em > 11) { em -= 12; ey++; }
+  return { year: ey, month: em };
+}
+
+// True if the course can be placed in this year/month (0-indexed)
+function canPlanInMonth(code, year, month) {
+  const e = earliestAllowed(code);
+  if (!e) return true;
+  if (year > e.year) return true;
+  if (year === e.year && month >= e.month) return true;
+  return false;
+}
+
+// Assign code to a specific slot index within a month
+function assignToSlot(mKey, slotIdx, code) {
+  // Clear whatever was in this slot before
+  if (planner[mKey] && planner[mKey][slotIdx]) {
+    unassignCode(planner[mKey][slotIdx]);
+  }
+  if (!code) { save(); renderPlanner(); return; }
+
+  // Validate Nov/Dec combined cap BEFORE assigning
+  const parts = mKey.split('-');
+  const yr = parseInt(parts[0]), mo = parseInt(parts[1]);
+  const cap = effectiveCapacity(yr, mo);
+  const currentCount = countAssignedInMonth(yr, mo);
+  if (currentCount >= cap) {
+    // Already at effective limit — re-render to reset the select
+    renderPlanner();
+    return;
+  }
+
+  // Timing rule guard
+  if (!canPlanInMonth(code, yr, mo)) { renderPlanner(); return; }
+
+  // Remove code from any other slot/month
+  unassignCode(code);
+
+  // Write into the exact slot index
+  if (!planner[mKey]) planner[mKey] = [];
+  while (planner[mKey].length <= slotIdx) planner[mKey].push(null);
+  planner[mKey][slotIdx] = code;
+
+  save();
+  renderPlanner();
+}
+
+function unassignCode(code) {
+  for (const k in planner) {
+    const idx = Array.isArray(planner[k]) ? planner[k].indexOf(code) : -1;
+    if (idx !== -1) {
+      planner[k][idx] = null;
+      // Trim trailing nulls
+      while (planner[k].length > 0 && !planner[k][planner[k].length - 1]) planner[k].pop();
+      if (planner[k].length === 0) delete planner[k];
+      return;
+    }
+  }
+}
+
+function getAssignedMonth(code) {
+  for (const k in planner) {
+    if (Array.isArray(planner[k]) && planner[k].includes(code)) return k;
+  }
+  return null;
+}
+
+// ── PENSUM RENDER ─────────────────────────────────────────────────────────
+function updateStats() {
+  let aprobadas = 0, cursando = 0, pendientes = 0, creditos = 0;
+  ALL_MATERIAS.forEach(m => {
+    const s = getStatus(m.code);
+    if (s === 'aprobada') { aprobadas++; creditos += m.cr; }
+    else if (s === 'cursando') cursando++;
+    else pendientes++;
+  });
+  document.getElementById('s-aprobadas').textContent = aprobadas;
+  document.getElementById('s-cursando').textContent  = cursando;
+  document.getElementById('s-pendientes').textContent = pendientes;
+  document.getElementById('s-creditos').textContent = creditos;
+
+  // Índice acumulado ponderado (base + materias registradas aquí)
+  let sumProd = 0, sumCr = 0;
+  if (baseIndice) {
+    sumProd += baseIndice.indice * baseIndice.creditos;
+    sumCr   += baseIndice.creditos;
+  }
+  ALL_MATERIAS.forEach(m => {
+    if (getStatus(m.code) === 'aprobada' && grades[m.code] != null) {
+      sumProd += grades[m.code] * m.cr;
+      sumCr   += m.cr;
+    }
+  });
+  const indice = sumCr > 0 ? (sumProd / sumCr).toFixed(2) : '—';
+  document.getElementById('s-indice').textContent = indice;
+
+  const pct = Math.round((creditos / 185) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent =
+    `${creditos} de 185 créditos completados (${pct}%) — ${aprobadas} de 53 asignaturas aprobadas`;
+}
+
+function renderPensum() {
+  const main = document.getElementById('pensum-main');
+  main.innerHTML = '';
+
+  PENSUM.forEach(cuatData => {
+    const section = document.createElement('div');
+    section.className = 'cuatrimestre';
+    section.innerHTML = `<div class="cuat-title">${cuatData.cuat}</div><div class="materias"></div>`;
+    main.appendChild(section);
+    const grid = section.querySelector('.materias');
+
+    cuatData.materias.forEach(m => {
+      const status  = getStatus(m.code);
+      const blocked = !prereqsMet(m.req) && status === 'pendiente';
+      const div = document.createElement('div');
+      div.className = `materia ${status}${blocked ? ' bloqueada' : ''}`;
+      const reqText = m.req.length === 0 ? 'Sin pre-requisitos' : `Pre-req: <span>${m.req.join(', ')}</span>`;
+      const planned = getAssignedMonth(m.code);
+      const plannedTag = planned
+        ? `<span style="font-size:.62rem;color:var(--purple)">📅 ${MONTH_NAMES[parseInt(planned.split('-')[1])]} ${planned.split('-')[0]}</span>`
+        : '';
+      div.innerHTML = `
+        <div class="materia-top">
+          <div><div class="materia-code">${m.code}</div></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="materia-cr">${m.cr} cr</div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="materia-name">${m.name}</div>
+        <div class="materia-req">${reqText}</div>
+        ${status === 'aprobada' && grades[m.code] != null
+          ? `<div class="materia-nota">⭐ ${grades[m.code].toFixed(2)}</div>` : ''}
+        ${plannedTag}
+      `;
+      if (!blocked) div.addEventListener('click', () => cycle(m.code));
+      else div.title = `Bloqueada: necesitás aprobar ${m.req.join(', ')}`;
+      grid.appendChild(div);
+    });
+  });
+
+  updateStats();
+}
+
+// ── PLANNER RENDER ────────────────────────────────────────────────────────
+function renderPlanner() {
+  const container = document.getElementById('view-planner');
+  const pending    = ALL_MATERIAS.filter(mat => getStatus(mat.code) !== 'aprobada');
+  const allPlanned = pending.length > 0 && pending.every(mat => getAssignedMonth(mat.code));
+  const months = generateMonths();
+
+  // Build options for a specific slot
+  // year/monthIdx (0-indexed) = the month card this select belongs to
+  function buildOptions(currentKey, slotIdx, cardYear, cardMonth) {
+    let html = '<option value="">— Sin asignar —</option>';
+    const inThisSlot = planner[currentKey] && planner[currentKey][slotIdx]
+      ? planner[currentKey][slotIdx] : null;
+
+    PENSUM.forEach(cuatData => {
+      const opts = cuatData.materias.map(m => {
+        if (getStatus(m.code) === 'aprobada') return '';
+
+        const assignedTo  = getAssignedMonth(m.code);
+        const assignedIdx = assignedTo === currentKey
+          ? (planner[currentKey] || []).indexOf(m.code) : -1;
+
+        // Must be free or already in this exact slot
+        const slotOk = !assignedTo || (assignedTo === currentKey && assignedIdx === slotIdx);
+        if (!slotOk) return '';
+
+        // Prereq timing rule: skip if too early (unless it's already the selected one)
+        const timingOk = canPlanInMonth(m.code, cardYear, cardMonth);
+        if (!timingOk && inThisSlot !== m.code) return '';
+
+        const status = getStatus(m.code);
+        const emoji  = status === 'cursando' ? '🔄' : '⬜';
+        const sel    = inThisSlot === m.code ? 'selected' : '';
+        return `<option value="${m.code}" ${sel}>${emoji} ${m.code} — ${m.name}</option>`;
+      }).join('');
+      if (opts) html += `<optgroup label="📚 ${cuatData.cuat}">${opts}</optgroup>`;
+    });
+    return html;
+  }
+
+  let html = `
+    <div class="planner-intro">
+      <strong>Regla de capacidad:</strong>
+      Abril, Agosto, Noviembre y Diciembre (fin de cuatrimestre) → <strong>2 materias</strong> por mes.<br>
+      El resto de los meses → <strong>1 materia</strong> por mes.<br>
+      Las materias ya asignadas no aparecen como opción en otros meses.
+    </div>
+    <div class="planner-grid">
+  `;
+
+  months.forEach(({ year, month, key }) => {
+    const cap      = effectiveCapacity(year, month);
+    const baseCap  = monthCapacity(month);
+    const assigned = assignedInMonth(key);
+    const isCur    = isCurrentMonth(year, month);
+    const isPast   = isPastMonth(year, month);
+    const capClass = cap === 2 ? 'cap-2' : 'cap-1';
+    const capLabel = cap === 2 ? '2 materias' : '1 materia';
+    const currentTag = isCur ? '<span class="current-tag">● HOY</span>' : '';
+    // Restricción Nov/Dic activa
+    const restricted = baseCap === 2 && cap === 1 && (month === 10 || month === 11);
+    const restrictedNote = restricted
+      ? `<div style="font-size:.65rem;color:var(--yellow);padding:4px 14px 8px;opacity:.85">
+           ⚠️ Limitado a 1 — ${month === 10 ? 'Diciembre' : 'Noviembre'} ya tiene 2 materias
+         </div>` : '';
+
+    // Créditos en este mes
+    const monthCredits = assigned.filter(Boolean).reduce((sum, code) => {
+      const mat = ALL_MATERIAS.find(m => m.code === code);
+      return sum + (mat ? mat.cr : 0);
+    }, 0);
+    const creditAlert = monthCredits > 6 && baseCap === 1
+      ? `<div style="font-size:.65rem;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:6px 10px;margin:8px 14px 0;">
+           ⚠️ ${monthCredits} créditos — Contactar a Registro para habilitación de créditos máximos
+         </div>` : '';
+
+    html += `
+      <div class="month-card ${isPast ? 'past' : ''} ${isCur ? 'current' : ''}">
+        <div class="month-header">
+          <div class="month-name">${MONTH_NAMES[month]} ${year} ${currentTag}</div>
+          <span class="month-badge ${capClass}">${capLabel}</span>
+        </div>
+        ${creditAlert}
+        <div class="month-slots" id="slots-${key}">
+    ${restrictedNote}
+    `;
+
+    for (let i = 0; i < cap; i++) {
+      const code = (assigned[i] != null) ? assigned[i] : null;
+      if (code) {
+        const mat    = ALL_MATERIAS.find(m => m.code === code);
+        const status = getStatus(code);
+        html += `
+          <div class="slot filled">
+            <span class="slot-num">${i + 1}</span>
+            <div class="slot-info">
+              <div class="slot-code">${code}</div>
+              <div class="slot-name">${mat ? mat.name : code}</div>
+              <div class="slot-status ${status}">${status === 'aprobada' ? '✅ Aprobada' : status === 'cursando' ? '🔄 Cursando' : '⬜ Pendiente'}</div>
+            </div>
+            <button class="remove-btn" onclick="removeFromMonth('${code}','${key}')" title="Quitar">✕</button>
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="slot">
+            <span class="slot-num">${i + 1}</span>
+            <select onchange="handleSlotChange(this,'${key}',${i})">
+              ${buildOptions(key, i, year, month)}
+            </select>
+          </div>
+        `;
+      }
+    }
+
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+
+  // Banner de completitud
+  if (allPlanned) {
+    html += `<div style="margin-top:24px;padding:18px 24px;border-radius:14px;background:var(--green-bg);border:1px solid var(--green);text-align:center">
+      <div style="font-size:1.5rem">🎓</div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--green);margin-top:6px">¡Todas las materias están planificadas!</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">El calendario se detuvo en el último mes planificado. Quitá una materia para extenderlo.</div>
+    </div>`;
+  }
+
+  // Unassigned materias
+  const unassigned = ALL_MATERIAS.filter(m => !getAssignedMonth(m.code) && getStatus(m.code) !== 'aprobada');
+  if (unassigned.length > 0) {
+    html += `
+      <div class="unassigned-panel">
+        <div class="unassigned-title">📌 Sin planificar (${unassigned.length} materias)</div>
+        <div class="unassigned-list">
+    `;
+    unassigned.forEach(m => {
+      const status = getStatus(m.code);
+      const emoji  = status === 'cursando' ? '🔄' : '⬜';
+      html += `<div class="unassigned-chip"><span class="chip-code">${m.code}</span>${emoji} ${m.name}</div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function handleSlotChange(select, key, slotIdx) {
+  const code = select.value || null;
+  assignToSlot(key, slotIdx, code);
+}
+
+function removeFromMonth(code, key) {
+  unassignCode(code);
+  save();
+  renderPlanner();
+}
+
+// ── HELPERS ANÁLISIS/MAPA ─────────────────────────────────────────────────
+function isUnlocked(code) {
+  const mat = ALL_MATERIAS.find(m => m.code === code);
+  if (!mat) return false;
+  return getStatus(code) === 'pendiente' && prereqsMet(mat.req);
+}
+
+function truncate(str, n) {
+  return str.length > n ? str.slice(0, n - 1) + '…' : str;
+}
+
+function addMonths(y, m, delta) {
+  m += delta;
+  while (m > 11) { m -= 12; y++; }
+  while (m < 0)  { m += 12; y--; }
+  return { year: y, month: m };
+}
+
+// ── ANÁLISIS ──────────────────────────────────────────────────────────────
+function renderAnalisis() {
+  const container = document.getElementById('view-analisis');
+
+  // ── 1. Materias desbloqueadas ahora ──
+  const desbloqueadas = ALL_MATERIAS.filter(m => isUnlocked(m.code));
+  const cuatOfCode = code => {
+    const c = PENSUM.find(c => c.materias.some(m => m.code === code));
+    return c ? c.cuat : '';
+  };
+
+  let unlockHtml = desbloqueadas.length === 0
+    ? `<p style="font-size:.8rem;color:var(--muted)">Ninguna por ahora. Aprobá más materias para desbloquear.</p>`
+    : desbloqueadas.map(m => `
+        <div class="unlock-chip">
+          <span class="chip-code">${m.code}</span>
+          <span class="chip-name">${m.name}</span>
+          <span class="chip-cuat">${cuatOfCode(m.code)}</span>
+        </div>`).join('');
+
+  // ── 2. Créditos por mes planificado ──
+  const sortedKeys = Object.keys(planner).sort();
+  const maxCr = sortedKeys.reduce((max, k) => {
+    const cr = planner[k].filter(Boolean).reduce((s, code) => {
+      const mat = ALL_MATERIAS.find(m => m.code === code);
+      return s + (mat ? mat.cr : 0);
+    }, 0);
+    return Math.max(max, cr);
+  }, 1);
+
+  let periodHtml = sortedKeys.length === 0
+    ? `<p style="font-size:.8rem;color:var(--muted)">Aún no planificaste ninguna materia.</p>`
+    : sortedKeys.map(k => {
+        const p = k.split('-');
+        const label = `${MONTH_NAMES[parseInt(p[1])]} ${p[0]}`;
+        const codes = planner[k].filter(Boolean);
+        const cr = codes.reduce((s, code) => {
+          const mat = ALL_MATERIAS.find(m => m.code === code);
+          return s + (mat ? mat.cr : 0);
+        }, 0);
+        const pct = Math.round((cr / maxCr) * 100);
+        const color = cr >= 7 ? '#ef4444' : cr >= 4 ? '#f59e0b' : '#22c55e';
+        return `
+          <div class="period-row">
+            <span class="period-label">${label}</span>
+            <div class="period-bar-wrap">
+              <div class="period-bar" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <span class="period-cr" style="color:${color}">${cr} cr</span>
+          </div>`;
+      }).join('');
+
+  // ── 3. Fecha estimada de graduación ──
+  let gradHtml;
+  if (sortedKeys.length === 0) {
+    gradHtml = `<p style="font-size:.8rem;color:var(--muted);text-align:center">Planificá materias para ver la fecha estimada.</p>`;
+  } else {
+    const lastKey = sortedKeys[sortedKeys.length - 1];
+    const lp = lastKey.split('-');
+    const { year: gradY, month: gradM } = addMonths(parseInt(lp[0]), parseInt(lp[1]), 3);
+    const now = new Date();
+    const nowY = now.getFullYear(), nowMo = now.getMonth();
+    const totalMonths = (gradY - nowY) * 12 + (gradM - nowMo);
+    const pending = ALL_MATERIAS.filter(m => getStatus(m.code) !== 'aprobada');
+    const planned = pending.filter(m => getAssignedMonth(m.code)).length;
+    gradHtml = `
+      <div class="grad-block">
+        <div class="grad-date">${MONTH_NAMES[gradM]} ${gradY}</div>
+        <div class="grad-sub">Último mes planificado</div>
+        <div class="grad-months">${totalMonths > 0 ? `en ${totalMonths} meses` : 'Este mes o antes'}</div>
+        <div style="margin-top:16px;font-size:.75rem;color:var(--muted)">
+          ${planned} de ${pending.length} materias pendientes planificadas
+        </div>
+        <div style="margin-top:8px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;border-radius:3px;background:var(--purple);width:${Math.round(planned/Math.max(pending.length,1)*100)}%"></div>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="analisis-grid">
+      <div class="analisis-card">
+        <div class="analisis-card-header">🔓 Materias desbloqueadas ahora (${desbloqueadas.length})</div>
+        <div class="analisis-card-body">${unlockHtml}</div>
+      </div>
+      <div class="analisis-card">
+        <div class="analisis-card-header">🎓 Graduación estimada</div>
+        <div class="analisis-card-body">${gradHtml}</div>
+      </div>
+      <div class="analisis-card" style="grid-column:1/-1">
+        <div class="analisis-card-header">📦 Créditos por mes planificado</div>
+        <div class="analisis-card-body">${periodHtml}</div>
+      </div>
+    </div>
+    <div class="gantt-wrap">
+      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px">📅 Línea de tiempo</div>
+      ${buildGantt()}
+    </div>`;
+}
+
+function buildGantt() {
+  const sortedKeys = Object.keys(planner).sort();
+  if (sortedKeys.length === 0)
+    return `<p style="font-size:.8rem;color:var(--muted)">Sin materias planificadas.</p>`;
+
+  return sortedKeys.map(k => {
+    const p   = k.split('-');
+    const lbl = `${MONTH_NAMES[parseInt(p[1])]} ${p[0]}`;
+    const now = new Date();
+    const isCur = parseInt(p[0]) === now.getFullYear() && parseInt(p[1]) === now.getMonth();
+    const chips = planner[k].filter(Boolean).map(code => {
+      const mat    = ALL_MATERIAS.find(m => m.code === code);
+      const status = getStatus(code);
+      return `<div class="gantt-chip ${status}" title="${mat ? mat.name : code}">${code}${mat ? ' · ' + mat.name : ''}</div>`;
+    }).join('');
+    return `
+      <div class="gantt-row">
+        <div class="gantt-month" style="${isCur ? 'color:var(--green)' : ''}">${lbl}${isCur ? ' ●' : ''}</div>
+        <div class="gantt-bars">${chips}</div>
+      </div>`;
+  }).join('<div class="gantt-divider"></div>');
+}
+
+// ── MAPA DE DEPENDENCIAS ──────────────────────────────────────────────────
+function renderMapa() {
+  const container = document.getElementById('view-mapa');
+  const NW = 158, NH = 46, HGAP = 18, VGAP = 84;
+  const PAD_TOP = 30, PAD_LEFT = 50;
+  const MAX_PER_ROW = Math.max(...PENSUM.map(c => c.materias.length));
+  const SVG_W = MAX_PER_ROW * (NW + HGAP) + PAD_LEFT + 40;
+  const SVG_H = PENSUM.length * (NH + VGAP) + PAD_TOP + 40;
+
+  // Compute node positions (centered per row)
+  const pos = {};
+  PENSUM.forEach((cuatData, ri) => {
+    const count = cuatData.materias.length;
+    const rowW  = count * NW + (count - 1) * HGAP;
+    const startX = PAD_LEFT + (SVG_W - PAD_LEFT - rowW) / 2;
+    const y = PAD_TOP + ri * (NH + VGAP);
+    cuatData.materias.forEach((m, ci) => {
+      const x = startX + ci * (NW + HGAP);
+      pos[m.code] = { x, y, cx: x + NW / 2, cy: y + NH / 2 };
+    });
+  });
+
+  // ── Edges ──
+  let edges = '';
+  PENSUM.forEach(cuatData => {
+    cuatData.materias.forEach(m => {
+      m.req.forEach(reqCode => {
+        if (!pos[reqCode] || !pos[m.code]) return;
+        const f = pos[reqCode], t = pos[m.code];
+        const x1 = f.cx, y1 = f.y + NH;
+        const x2 = t.cx, y2 = t.y;
+        const mid = (y1 + y2) / 2;
+        const isApproved = getStatus(reqCode) === 'aprobada';
+        const color = isApproved ? '#22c55e55' : '#4a556888';
+        edges += `<path d="M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}"
+          fill="none" stroke="${color}" stroke-width="1.5" marker-end="url(#arr)"/>`;
+      });
+    });
+  });
+
+  // ── Nodes ──
+  let nodes = '';
+  PENSUM.forEach((cuatData, ri) => {
+    const labelY = PAD_TOP + ri * (NH + VGAP) + NH / 2 + 4;
+    nodes += `<text x="6" y="${labelY}" font-size="9" fill="#64748b" font-weight="700" font-family="system-ui">${ri + 1}°</text>`;
+
+    cuatData.materias.forEach(m => {
+      const { x, y, cx } = pos[m.code];
+      const status   = getStatus(m.code);
+      const unlocked = isUnlocked(m.code);
+      let fill, stroke, textColor;
+      if (status === 'aprobada')      { fill = '#052e16'; stroke = '#22c55e'; textColor = '#86efac'; }
+      else if (status === 'cursando') { fill = '#1c1407'; stroke = '#f59e0b'; textColor = '#fcd34d'; }
+      else if (unlocked)              { fill = '#0c1a3e'; stroke = '#60a5fa'; textColor = '#93c5fd'; }
+      else                            { fill = '#1a1d27'; stroke = '#374151'; textColor = '#94a3b8'; }
+
+      // Light mode overrides via JS theme check
+      if (theme === 'light') {
+        if (status === 'aprobada')      { fill = '#dcfce7'; stroke = '#16a34a'; textColor = '#166534'; }
+        else if (status === 'cursando') { fill = '#fef3c7'; stroke = '#d97706'; textColor = '#92400e'; }
+        else if (unlocked)              { fill = '#dbeafe'; stroke = '#2563eb'; textColor = '#1e40af'; }
+        else                            { fill = '#f8fafc'; stroke = '#cbd5e1'; textColor = '#475569'; }
+      }
+
+      const name = truncate(m.name, 21);
+      nodes += `
+        <g>
+          <rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="8"
+            fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+          <text x="${cx}" y="${y + 13}" font-size="8.5" fill="${textColor}" text-anchor="middle"
+            font-family="monospace" font-weight="700">${m.code}</text>
+          <text x="${cx}" y="${y + 27}" font-size="9.5" fill="${textColor}" text-anchor="middle"
+            font-family="system-ui" font-weight="600">${name}</text>
+          <text x="${cx}" y="${y + 40}" font-size="8" fill="${stroke}" text-anchor="middle"
+            font-family="system-ui">${m.cr} cr</text>
+        </g>`;
+    });
+  });
+
+  const isDark = theme === 'dark';
+  const legendItems = [
+    { label: 'Aprobada',    fill: isDark ? '#052e16' : '#dcfce7', stroke: isDark ? '#22c55e' : '#16a34a' },
+    { label: 'Cursando',    fill: isDark ? '#1c1407' : '#fef3c7', stroke: isDark ? '#f59e0b' : '#d97706' },
+    { label: 'Disponible',  fill: isDark ? '#0c1a3e' : '#dbeafe', stroke: isDark ? '#60a5fa' : '#2563eb' },
+    { label: 'Pendiente',   fill: isDark ? '#1a1d27' : '#f8fafc', stroke: isDark ? '#374151' : '#cbd5e1' },
+  ];
+  const legendHtml = legendItems.map(l =>
+    `<div class="mapa-legend-item">
+      <div class="mapa-legend-box" style="background:${l.fill};border-color:${l.stroke}"></div>
+      ${l.label}
+    </div>`).join('');
+
+  container.innerHTML = `
+    <div class="mapa-legend">${legendHtml}</div>
+    <div style="overflow:auto">
+      <svg width="${SVG_W}" height="${SVG_H}" style="display:block">
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#4a5568"/>
+          </marker>
+        </defs>
+        ${edges}
+        ${nodes}
+      </svg>
+    </div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadFromSupabase();
+</script>
+</body>
+</html>
