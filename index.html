@@ -555,22 +555,27 @@ function save() {
 
 async function pushToSupabase() {
   setSyncStatus('syncing');
+  const payload = { state, planner, grades, base_indice: baseIndice };
   try {
-    const res = await fetch(SB_API, {
-      method:  'POST',
-      headers: { ...SB_HDR, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body:    JSON.stringify({ user_id: userId, state, planner, grades, base_indice: baseIndice }),
+    // Try PATCH first (row already exists)
+    let res = await fetch(`${SB_API}?user_id=eq.${userId}`, {
+      method:  'PATCH',
+      headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+      body:    JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      setSyncStatus('error');
-      document.getElementById('sync-status').innerHTML += ` <span style="font-size:.6rem;color:#ef4444">[${res.status}: ${errText}]</span>`;
-      return;
+    // If no row matched (new device), INSERT instead
+    if (res.ok && res.headers.get('content-range') === '*/0') {
+      res = await fetch(SB_API, {
+        method:  'POST',
+        headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({ user_id: userId, ...payload }),
+      });
     }
+    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
     setSyncStatus('synced');
   } catch (e) {
     console.error('Supabase push:', e);
-    document.getElementById('sync-status').innerHTML = `<span style="color:#ef4444">🔴 ${e.message}</span>`;
+    setSyncStatus('error');
   }
 }
 
